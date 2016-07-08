@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="application/html-dependencies">bootstrap[3.3.1]</script>
+  <script src="shared/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="shared/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+<script src="shared/bootstrap/js/bootstrap.min.js"></script>
+<script src="shared/d3.min.js"></script>
+<script src="probability.js"></script>
+<script src="probModel.js"></script>
+<script src="probView.js"></script>
+<script src="eiko.js"></script>
+<link href="probability.css" rel="stylesheet" />
+
+  <title>Visualising Independence</title>
+  <style>
+      body {
+        font-family: 'Open Sans', Arial, sans-serif;
+      }
+      
+      .control-label {
+        font-weight: bold;
+      }
+      
+      .tab-content {
+        overflow: visible;
+      }
+      
+      #file_progress {
+      display: none;
+      }
+
+      #error {
+        color: red;
+      }
+
+      .help-info {
+        max-width: 640px;
+      }
+      
+      .help-info p {
+        margin-bottom: 15px;
+        line-height: 150%;
+      }
+
+      p.sample-file {
+        font-family:Consolas, Courier, monospace;
+        padding: 8px 15px;
+        background-color: #EEE;
+      }
+    </style>
+  <title>Visualising Independence</title>
+
+</head>
+<body>
+  <div class="container-fluid">
+    <h2>Visualising Independence</h2>
+    <div class="row">
+      <div class="col-sm-4">
+        <form class="well">
+          <div class="form-group shiny-input-container">
+            <label></label>
+            <input id="file" name="file" type="file" accept="text/csv,text/comma-separated-values,text/plain,.csv"/>
+            <div id="file_progress" class="progress progress-striped active shiny-file-input-progress">
+              <div class="progress-bar"></div>
+            </div>
+          </div>
+          <br/>
+          <br/>
+         <!-- <div class="form-group shiny-input-container">
+            <div class="checkbox">
+              <label>
+                <input id="header" type="checkbox" checked="checked"/>
+                <span>File contains a header (raw data only)</span>
+              </label>
+            </div>
+          </div>
+          <br/>
+          <div id="fileType" class="form-group shiny-input-radiogroup shiny-input-container">
+            <label class="control-label" for="fileType">Data Type</label>
+            <div class="shiny-options-group">
+              <div class="radio">
+                <label>
+                  <input type="radio" name="fileType" value="raw" checked="checked"/>
+                  <span>Raw (CSV)</span>
+                </label>
+              </div>
+              <div class="radio">
+                <label>
+                  <input type="radio" name="fileType" value="counts"/>
+                  <span>Counts</span>
+                </label>
+              </div>
+            </div>
+          </div> -->
+          <div id="showDataUI" class="shiny-html-output"></div>
+          <div id="independenceUI" class="shiny-html-output"></div>
+          <div id="factorSelectors" class="shiny-html-output"></div>
+          <div id="swapFactorsUI" class="shiny-html-output"></div>
+          <br/>
+          <p id="error" class="shiny-text-output"></p>
+        </form>
+      </div>
+      <div class="col-sm-8">
+        <div class="tabbable tabs-above">
+          <ul class="nav nav-tabs">
+            <li class="active">
+              <a href="#tab-4190-1" data-toggle="tab" data-value="Eikosogram">Eikosogram</a>
+            </li>
+            <li>
+              <a href="#tab-4190-2" data-toggle="tab" data-value="Controls">Controls</a>
+            </li>
+            <li>
+              <a href="#tab-4190-3" data-toggle="tab" data-value="Help">Help</a>
+            </li>
+          </ul>
+          <div class="tab-content">
+            <div class="tab-pane active" data-value="Eikosogram" id="tab-4190-1">
+              <div id="eikosogram" class="vis-output" style="width: 100% ;"></div>
+            </div>
+            <div class="tab-pane" data-value="Controls" id="tab-4190-2">
+              <div id="countsGrid" class="vis-output" style="width: 100% ; height: 600px"></div>
+            </div>
+            <div class="tab-pane help-info" data-value="Help" id="tab-4190-3">
+              <h3>File format</h3>
+              <h5>Raw format</h5>
+              <p>
+                A CSV file, with variables as columns and observations as rows.
+                If the first row is not a header that gives variable names, you'll need to deselect the 'File contains a header' option.
+              </p>
+              <p>Example:</p>
+              <p class="sample-file">
+                course,sex,age,eyes
+                <br/>
+                201,female,20,brown
+                <br/>
+                BIOSCI_209,female,30,green
+                <br/>
+                208,male,22,blue
+                <br/>
+                BIOSCI_209,male,26,brown
+              </p>
+              <h5>Counts format</h5>
+              <p>
+                This format allows you to read in a table of counts directly.
+                The first two lines should specify the names of the factors in the table.
+                It does not matter which order these two lines are in.
+              </p>
+              <p>
+                The third line should give the names (levels) of the column factor, 
+                and then line 4 onwards should specify the rows of the table, 
+                where the first value in each line gives the level of the row factor, 
+                and the following values give the counts.
+              </p>
+              <p>Example:</p>
+              <p class="sample-file">
+                rows=EyeColour
+                <br/>
+                cols=Gender
+                <br/>
+                ,female,male
+                <br/>
+                blue,37,37
+                <br/>
+                brown,132,101
+                <br/>
+                green,23,15
+                <br/>
+                hazel,17,18
+                <br/>
+                other,16,12
+              </p>
+              <h3>Using this tool</h3>
+              <p>
+                First upload a file. 
+                Specify the data type of your file using the Data Type options.
+              </p>
+              <p>
+                For raw CSV files, the factors in the dataset will be detected automatically, 
+                and all factors with no more than 5 levels will be displayed in the factor selection boxes.
+                A numerically-coded factor will be recognised as a factor as long as the levels are non-negative integers and there are no more than 5 levels.
+                Other numeric variables that do not meet these conditions are ignored.
+                We place a restriction on the number of factor levels because having a large number of levels make the diagrams more difficult to interpret.
+              </p>
+              <p>
+                You can display counts for each cell (and column total) by selecting the Counts options under 'Show data labels'.
+                Similarly, you can instead choose to display proportions within each column by selecting the Proportions option.
+              </p>
+              <p>Tick the 'Show independence' checkbox to show what we would expect to see if the two factors were independent.</p>
+              <br/>
+              <br/>
+              <br/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
