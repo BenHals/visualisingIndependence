@@ -138,7 +138,7 @@ function eiko(controller, factors, iD, speed){
 
 		//Population Number
 		screen.append('text').attr('id','popNum').attr('x',middle(rect[1],rect[0])).attr('y',middle(rect[3],rect[2])).attr('text-anchor','middle').attr('font-size',wP.fontSize*2*fontMulti)
-				.style('fill','black').style('opacity',0.8)
+				.style('fill','black').style('opacity',0.8).style('font-weight','bold')
 				.text(iD.length);
 		//Individuals
 		screen.append('text').attr('id','individuals').attr('x',middle(rect[1],rect[0])).attr('y',middle(rect[3],rect[2])+wP.fontSize*fontMulti*2).attr('text-anchor','middle').attr('font-size',wP.fontSize*fontMulti*2)
@@ -161,13 +161,18 @@ function eiko(controller, factors, iD, speed){
 			.attr('x1',function(d){return d.right}).attr('x2',function(d){return d.right})
 			.attr('y1',function(d){return d.top}).attr('y2',function(d){return d.bottom})
 			.style('stroke-width', strokeSize/4).style('stroke','black').style('opacity',0);
-
+		cols.append('text').attr('class','colCat')
+			.attr('x',function(d){return middle(d.right,d.left)})
+			.attr('y',function(d){return rect[3] + strokeSize + 25})
+			.attr('font-size',wP.fontSize*fontMulti)
+				.style('fill','black').style('opacity',0)
+				.text(function(d){return d.secCategory});
 		for (i=0;i<self.primaryKeys.length;i++){
 			var key = self.primaryKeys[i];
 			cols.append('line').attr('class', function(d){return "estLine eL"+i})
 				.attr('x1',function(d){return d.left}).attr('x2',function(d){return d.right})
 				.attr('y1',function(d){return self.yScale(d.estDivs[i])}).attr('y2',function(d){return self.yScale(d.estDivs[i])})
-				.style('stroke-width', strokeSize/4).style('stroke','red').style('opacity',0);
+				.style('stroke-width', strokeSize/4).style('stroke','black').style('opacity',0);
 			cols.append('line').attr('class', function(d){return "actLine aL"+i})
 				.attr('x1',function(d){return d.left}).attr('x2',function(d){return d.right})
 				.attr('y1',function(d){return self.yScale(d.actDivs[i])}).attr('y2',function(d){return self.yScale(d.actDivs[i])})
@@ -189,7 +194,7 @@ function eiko(controller, factors, iD, speed){
 				.text('Total');
 		var t0 = screen.transition().delay(pauseDelay).duration(transTime);
 		t0.select('#popNum').attr('x', rect[1] +strokeSize).attr('y', rect[3] + strokeSize + 25).attr('font-size',wP.fontSize*fontMulti * 1.2)
-				.style('fill','black').style('opacity',1);
+				.style('fill','black').style('opacity',1).attr('text-anchor','start');
 		t0.select('#individuals').style('opacity',0).each('end',function(){
 			//self.animateSplit(wP,screen,rect, scale);
 			self.stopPoint(wP,screen,rect, scale, self.animateSplit);
@@ -224,13 +229,13 @@ function eiko(controller, factors, iD, speed){
 			}
 			yValue = self.yScale(middle(prevY, prevY+self.aFs[pNames[i]]['prob']))+5;
 			prevY += self.aFs[pNames[i]]['prob'];
-			screen.append('text').attr('class','sfNames').attr('x',wP.fifthsW[0][0] - 50).attr('y',yValue).attr('text-anchor','end').attr('font-size',wP.fontSize*fontMulti)
+			screen.append('text').attr('class','pfNames').attr('x',wP.fifthsW[0][0] - 50).attr('y',yValue).attr('text-anchor','end').attr('font-size',wP.fontSize*fontMulti)
 			.style('fill','black').style('opacity',0)
 			.text(pNames[i]);
-			screen.append('text').attr('class','sfNames').attr('x',middle(rect[0],rect[1])).attr('y',yValue).attr('text-anchor','middle').attr('font-size',wP.fontSize*fontMulti)
+			screen.append('text').attr('class','pfNums').attr('x',middle(rect[0],rect[1])).attr('y',yValue).attr('text-anchor','middle').attr('font-size',wP.fontSize*fontMulti)
 				.style('fill','black').style('opacity',0)
 				.text(self.aFs[pNames[i]]['num']);
-			screen.append('text').attr('class','sfNames').attr('x',rect[1] + strokeSize).attr('y',yValue).attr('text-anchor','left').attr('font-size',wP.fontSize*fontMulti)
+			screen.append('text').attr('class','pfProps').attr('x',rect[1] + strokeSize).attr('y',yValue).attr('text-anchor','left').attr('font-size',wP.fontSize*fontMulti)
 				.style('fill','black').style('opacity',0)
 				.text(Math.round(self.aFs[pNames[i]]['prob']*100)/100);
 			screen.append('text').attr('class','totals totalsValues').attr('x',wP.fifthsW[0][0] - strokeSize/2).attr('y',yValue).attr('text-anchor','end').attr('font-size',wP.fontSize*fontMulti)
@@ -245,18 +250,127 @@ function eiko(controller, factors, iD, speed){
 			self.colorMap[pNames[i]] = pColsScale(colCount);
 			colCount++;
 		}
-		var count = pNames.length-1;
-		d3.selectAll('.sfColor').transition().duration(transTime).style('opacity', 0.8);
-		d3.selectAll('.estLine').attr('x1',function(d){return rect[0]}).attr('x2',function(d){return rect[0]}).style('opacity', 1).transition().duration(transTime).attr('x2',function(d){return rect[1]})
-			.transition().attr('x1',function(d){return d.left}).attr('x2',function(d){return d.right});
-		d3.selectAll('.sfNames').transition().duration(transTime).style('opacity',1).transition().duration(pauseDelay).each('end', function(){
-			count--;
-			if(count==0){
+		var count = 0;
+		var t1 = d3.select('svg').transition().duration(transTime);
+		d3.selectAll('.estLine').attr('x1',function(d){return rect[0]}).attr('x2',function(d){return rect[0]}).style('opacity', 1);
+		t1.selectAll('.pfNames').style('opacity',1).transition().duration(pauseDelay);
+		var t2 = t1.transition();
+		t2.selectAll('.pfNums').style('opacity',1).transition().duration(pauseDelay)
+		//d3.selectAll('.sfColor').transition().duration(transTime).style('opacity', 0.8);
+		var t3 = t2.transition();
+		t3.selectAll('.estLine').attr('x2',function(d){return rect[1]})
+			.transition().duration(50).attr('x1',function(d){return d.left}).attr('x2',function(d){return d.right}).each('end', function(){
+			count++;
+			if(count==1){
 				//self.secondSplit(wP,screen,rect, scale);
 				//controller.getShowData();
-				d3.select('#mainSquare').transition().duration(transTime).attr('transform',"scale(0.75,0.75)");
+				var c = 0;
+				var t1 = screen.transition().duration(transTime);
+				t1.selectAll('.pfProps').style('opacity',1).each('end',function(){
+					c++;
+					if(c==1){
+						self.stopPoint(wP,screen,rect, scale, self.scaleTop);
+						//self.scaleTop(wP,screen,rect, scale, self.animateSplit);
+					}
+				});
+
 			}
 		});
+		this.scaleTop = function(wP,screen,rect, scale){
+			d3.select("#mainSquare").transition().duration(transTime).attr('transform','scale(0.75,0.75)').each('end',function(){
+					self.createSecond(wP,screen,rect, scale);
+				});
+		}
+		this.createSecond = function(wP,screen,rect, scale){
+			var sContainer = d3.select('svg').append('g').attr('id','secondRect');
+			sContainer.append('rect').attr('class','backgroundUnder').attr('x',rect[0]).attr('y',rect[2]).attr('width',rect[1]-rect[0]).attr('height',rect[3]-rect[2]).style('fill', 'grey').style('stroke','black').style('stroke-width',strokeSize).style('stroke-alignment','outer').style('fill-opacity',0.2).style('opacity',0);
+			sContainer.append('rect').attr('class','backgroundUnder').attr('x',rect[0]).attr('y',rect[2]).attr('width',rect[1]-rect[0]).attr('height',rect[3]-rect[2]).style('fill', 'lightgrey').style('fill-opacity',1).style('opacity',0);
+
+			sContainer.attr('transform', 'translate(0,'+(rect[3]-rect[2])*0.8+') scale(0.75,0.75)')
+			var c = 0;
+			sContainer.selectAll('*').transition().duration(transTime).style('opacity',1).each('end',function(){
+				c++;
+				if(c==1){
+					self.nameSecondary(wP,screen,rect, scale);
+				}
+			});
+		}
+		this.nameSecondary = function(wP,screen,rect, scale){
+			var sContainer = d3.select('#secondRect');
+			var sFTitle = sContainer.append('text').attr('id','sFTitle').attr('x',middle(rect[0],rect[1])).attr('y',rect[3] + strokeSize + 25 + wP.fontSize*fontMulti*1.5).attr('text-anchor','middle').attr('font-size',wP.fontSize*fontMulti*1.5)
+				.style('fill','black').style('opacity',0).style('font-weight','bold')
+				.text(factor2);
+			sFTitle.transition().duration(transTime).style('opacity',1);
+		var cols = sContainer.selectAll('g').data(self.columns).enter().append('g');
+		cols.append('line').attr('class','colLineUnder')
+			.attr('x1',function(d){return d.right}).attr('x2',function(d){return d.right})
+			.attr('y1',function(d){return d.top}).attr('y2',function(d){return d.bottom})
+			.style('stroke-width', strokeSize/4).style('stroke','black').style('opacity',0);
+
+		cols.append('text').attr('class','colCatUnder')
+			.attr('x',function(d){return middle(d.right,d.left)})
+			.attr('y',function(d){return rect[3] + strokeSize + 25})
+			.attr('font-size',wP.fontSize*fontMulti)
+				.style('fill','black').style('opacity',0)
+				.text(function(d){return d.secCategory});
+		cols.append('text').attr('class','colPropUnder')
+			.attr('x',function(d){return middle(d.right,d.left)})
+			.attr('y',function(d){return rect[3] + strokeSize + wP.fontSize*fontMulti / 2})
+			.attr('font-size',wP.fontSize*fontMulti)
+				.style('fill','black').style('opacity',0)
+				.text(function(d){return Math.round(d.prop*100)/100});
+		var c =0;
+		d3.selectAll('.colCatUnder').transition().duration(transTime).style('opacity',1).each('end',function(){
+				c++;
+				if(c==1){
+					self.underCols(wP,screen,rect, scale);
+				}
+			});
+		}
+		this.underCols = function(wP,screen,rect, scale){
+			var c =0;
+			d3.selectAll('.colLineUnder').attr('y1',function(d){return rect[3]}).attr('y2',function(d){return rect[3]}).style('opacity', 1)
+				.transition().duration(transTime)
+				.attr('y2',function(d){return rect[2]})
+				.transition().duration(50).attr('y1',function(d){return d.bottom}).attr('y2',function(d){return d.top}).each('end', function(){
+					c++;
+					if(c==1){
+						d3.selectAll('.colPropUnder').transition().duration(transTime).style('opacity',1);
+						self.stopPoint(wP,screen,rect, scale, self.setupSplit);
+						//self.setupSplit(wP,screen,rect, scale);
+					}
+			});
+		}
+		this.setupSplit = function(wP,screen,rect, scale){
+			var sContainer = d3.select('#secondRect');
+			sContainer.append('line').attr('x1', rect[0]).attr('x2', rect[1]).attr('y1', rect[3]).attr('y2', rect[3])
+			.style('stroke-width', strokeSize/4).style('stroke','black').style('opacity',1);
+
+			sContainer.selectAll('.colLineUnder').style('opacity',function(d,i){
+				if(i == self.secValues.size-1){
+					return 0;
+				}
+				return 1;
+			});
+			var t1 = d3.select('svg').transition().duration(transTime);
+			t1.selectAll('.backgroundUnder').style('opacity',0);
+			var t2 = t1.transition();
+			t2.select('#secondRect').attr('transform','translate(0,'+(rect[3]-rect[2])*0.75+') scale(0.75,0.75)').each('end',function(){
+				self.cumY = 0;
+				self.splitShiftUp(wP,screen,rect, scale,self.primaryKeys.length-1);
+			});
+		}
+		this.splitShiftUp = function(wP,screen,rect, scale,index){
+				self.cumY += self.aFs[self.primaryKeys[index]]['prob'];
+				var nextY = (rect[3] - rect[2]) * self.cumY;
+			d3.select('#secondRect').transition().duration(transTime).attr('transform','translate(0,'+((rect[3] - rect[2]) - nextY)*0.75+') scale(0.75,0.75)')
+				.transition().duration(pauseDelay)
+				.each('end',function(){
+					if(index > 0){
+						self.splitShiftUp(wP,screen,rect, scale,index-1);
+					}
+				});
+		}
 		//create containers for each column
 		// self.pFCols = screen.selectAll('g').data(d3.keys(self.aFs)).enter().append('g').attr('class','pFCols');
 		// var text = self.pFCols.append('text').attr('class','pgCount').attr('x',middle(rect[1],rect[0])).attr('y',wP.fifthsH[3][1]).attr('text-anchor','middle').attr('font-size',wP.fontSize*fontMulti)
